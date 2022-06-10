@@ -28,7 +28,7 @@ This is a school project in Computer Information Technology program at British C
 	```
 	ansible-playbook main_playbook.yml --tags provision
 	```
-6. To delete all the object on the AWS, run the command
+6. To delete all the objects on the AWS, run the command
 	```
 	ansible-playbook main_playbook.yml --tags destroy
 	```
