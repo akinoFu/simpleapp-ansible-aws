@@ -18,10 +18,10 @@ This is a school project in Computer Information Technology program at British C
 2. Create a key pair named "***ansible.pem***" on AWS
 3. Place the key under the local repo directory
 4.  Create an IAM user who belongs to a role having "***AdministratorAccess***" on AWS
-5.  Create a file named "***aws_keys***" under the locl repo directory with the following contents:
-		export  AWS_ACCESS_KEY_ID=*access_key_id*
-		export  AWS_SECRET_ACCESS_KEY=*access_key*
-		export  AWS_DEFAULT_REGION=us-west-2
+5.  Create a file named "***aws_keys***" under the locl repo directory with the following contents:  
+		export  AWS_ACCESS_KEY_ID=*access_key_id*  
+		export  AWS_SECRET_ACCESS_KEY=*access_key*  
+		export  AWS_DEFAULT_REGION=us-west-2  
 6. Run the command
 	```
 	ansible-playbook main_playbook.yml
