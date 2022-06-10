@@ -1,0 +1,8 @@
+---
+# defaults file for applicataion
+db_host: 127.0.0.1
+db_name: backend
+db_username: example
+db_password: verysecure
+student_name: Default
+student_id: A00000000

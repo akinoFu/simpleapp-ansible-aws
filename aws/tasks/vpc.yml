@@ -1,0 +1,81 @@
+---
+- name: Create the AWS VPC
+  amazon.aws.ec2_vpc_net:
+    name: "{{ AWS_PREFIX }}_AUTO"
+    cidr_block: "{{ vpc_cidr }}"
+    region: us-west-2
+  register: aws_vpc_info
+
+- name: Make sure a subnet exists (Subnet A)
+  amazon.aws.ec2_vpc_subnet:
+    cidr: "{{ subnet_a_cidr }}"
+    az: us-west-2a
+    vpc_id: "{{ aws_vpc_info.vpc.id }}"
+    tags:
+      Name: "{{ AWS_PREFIX }}_SUBNET"
+  register: aws_subnet_info
+
+- name: Make sure a subnet exists (Subnet B)
+  amazon.aws.ec2_vpc_subnet:
+    cidr: "{{ subnet_b_cidr }}"
+    az: us-west-2b
+    vpc_id: "{{ aws_vpc_info.vpc.id }}"
+    tags:
+      Name: "{{ AWS_PREFIX }}_SUBNETB"
+  register: aws_subnet_info2
+
+# - name: DB subnet group
+#   community.aws.rds_subnet_group:
+#     state: present
+#     name: "{{ AWS_PREFIX }}-db-subnet"
+#     description: DB subnet group
+#     subnets:
+#       - "{{ aws_subnet_info.subnet.id }}"
+#       - "{{ aws_subnet_info2.subnet.id }}"
+#   register: aws_db_subnet
+
+- name: Internet gateway
+  ec2_vpc_igw:
+    vpc_id: "{{ aws_vpc_info.vpc.id }}"
+    tags:
+      Name: "{{ AWS_PREFIX }}_IGW"
+  register: aws_igw_info
+
+- name: Route table
+  amazon.aws.ec2_vpc_route_table:
+    subnets:
+      - "{{ aws_subnet_info.subnet.id }}"
+    routes:
+      - dest: 0.0.0.0/0
+        gateway_id: "{{ aws_igw_info.gateway_id }}"
+    vpc_id: "{{ aws_vpc_info.vpc.id }}"
+    tags:
+      Name: "{{ AWS_PREFIX }}_RTBL"
+
+- name: Security group for app
+  amazon.aws.ec2_group:
+    name: "{{AWS_PREFIX}}_SECGRP_APP"
+    description: Security group for app - SSH and HTTP wide open
+    vpc_id: "{{ aws_vpc_info.vpc.id }}"
+    rules:
+      - proto: tcp
+        ports:
+          - 22
+          - 80
+        cidr_ip: 0.0.0.0/0
+  register: aws_groups_app
+- name: Security group for DB
+  amazon.aws.ec2_group:
+    name: "{{AWS_PREFIX}}_SECGRP_DB"
+    description: Security group for app - SSH and HTTP wide open
+    vpc_id: "{{ aws_vpc_info.vpc.id }}"
+    rules:
+      - proto: tcp
+        ports:
+          - 22
+        cidr_ip: 0.0.0.0/0
+      - proto: tcp
+        ports:
+          - 3306
+        cidr_ip: "{{ subnet_a_cidr }}"
+  register: aws_groups_db

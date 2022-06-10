@@ -1,0 +1,59 @@
+---
+# tasks file for database
+- name: update apt repo and cache on all Debian/Ubuntu boxes
+  apt: update_cache=yes force_apt_get=yes cache_valid_time=3600
+  become: true
+- name: installing software
+  become: true
+  apt:
+    name:
+      - python3-pip
+      - mysql-server
+
+- name: install pymysql
+  become: true
+  pip:
+    name: pymysql
+
+- name: Chenge the bind address in the conf file
+  become: true
+  replace:
+    path: /etc/mysql/mysql.conf.d/mysqld.cnf
+    regexp: '^bind-address[ \t]*= 127.0.0.1'
+    replace: "bind-address = 0.0.0.0"
+
+- name: restart mysql
+  become: true
+  service:
+    name: mysql
+    enabled: true
+    state: restarted
+
+- name: create a database on mysql
+  become: true
+  mysql_db:
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+    login_user: root
+    name: "{{ db_name }}"
+
+- name: create example user on mysql
+  become: true
+  mysql_user:
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+    login_user: root
+    name: "{{ db_username }}"
+    password: "{{ db_password }}"
+    host: "%"
+    priv:
+      "{{ db_name }}.*:ALL,GRANT"
+      # "*.*": "ALL,GRANT"
+    # state: present
+
+- name: flush privileges
+  become: true
+  mysql_query:
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+    login_user: root
+    query: FLUSH PRIVILEGES
+
+

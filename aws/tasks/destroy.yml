@@ -1,0 +1,28 @@
+---
+# EC2s
+- name: Get info about EC2 instances
+  amazon.aws.ec2_instance_info:
+    filters:
+      instance-state-name: running
+      "tag:Name": "{{ AWS_PREFIX }}*"
+  register: ec2_instances
+
+- name: Terminate the instances
+  amazon.aws.ec2_instance:
+    instance_ids: "{{ ec2_instances.instances | map(attribute='instance_id') }}"
+    state: terminated
+  when: ec2_instances.instances | length > 0
+
+
+# RDS
+- name: Get info about RDS instance
+  community.aws.rds_instance_info:
+    db_instance_identifier: "{{ AWS_PREFIX }}-db"
+  register: aws_rds_info
+
+- name: Delete the RDS
+  community.aws.rds_instance:
+    id: "{{ aws_rds_info.instances[0].db_instance_identifier }}"
+    state: absent
+    skip_final_snapshot: true
+  when: aws_rds_info.instances | length > 0

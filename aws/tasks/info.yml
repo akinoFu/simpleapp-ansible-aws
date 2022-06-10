@@ -1,0 +1,98 @@
+---
+# VPC info
+- name: VPC info
+  amazon.aws.ec2_vpc_net_info:
+    filters:
+      "tag:Name": "{{ AWS_PREFIX }}_AUTO"
+  register: aws_vpcs
+  when: aws_vpcs is not defined
+
+- name: get subnet info
+  amazon.aws.ec2_vpc_subnet_info:
+    filters:
+      "tag:Name": "{{ AWS_PREFIX }}_SUBNET"
+      vpc-id: "{{ aws_vpcs.vpcs[0].id }}"
+  register: aws_subnets
+  when: aws_subnets is not defined
+
+- name: get security group info
+  amazon.aws.ec2_group_info:
+    filters:
+      group-name: "{{ AWS_PREFIX }}_SECGRP_DB"
+      vpc-id: "{{ aws_vpcs.vpcs[0].id }}"
+  register: aws_groups_db
+  when: aws_groups_db is not defined
+
+- name: get security group info
+  amazon.aws.ec2_group_info:
+    filters:
+      group-name: "{{ AWS_PREFIX }}_SECGRP_APP"
+      vpc-id: "{{ aws_vpcs.vpcs[0].id }}"
+  register: aws_groups_app
+  when: aws_groups_app is not defined
+
+# RDS info
+- name: get info about RDS instance
+  community.aws.rds_instance_info:
+    db_instance_identifier: "{{ AWS_PREFIX }}-db"
+  register: aws_rds_info
+  when: rds_database == true
+  tags: info
+
+# EC2 info
+- name: Get info about EC2 instance (APP)
+  amazon.aws.ec2_instance_info:
+    filters:
+      instance-state-name: running
+      "tag:Name": "{{ AWS_PREFIX }}_APP"
+  register: app_instances
+  tags: info
+
+- name: Get info about EC2 instance (DB)
+  amazon.aws.ec2_instance_info:
+    filters:
+      instance-state-name: running
+      "tag:Name": "{{ AWS_PREFIX }}_DB"
+  register: db_instances
+  tags: info
+
+# Output information
+- name: Debug info (EC2 + EC2-DB) 
+  debug:
+    msg:
+     - "DB private IP address: {{ db_instances.instances[0].private_ip_address }}"
+     - "DB public IP address: {{ db_instances.instances[0].public_ip_address }}"
+     - "APP Public DNS: {{ app_instances.instances[0].public_dns_name }}"
+     - "APP Public IP address: {{ app_instances.instances[0].public_ip_address }}"
+  when: rds_database == false
+  tags: info
+
+- name: Debug info (EC2 + RDS) 
+  debug:
+    msg:
+     - "RDS Endpoint: {{ aws_rds_info.instances[0].endpoint.address }}"
+     - "APP Public DNS: {{ app_instances.instances[0].public_dns_name }}"
+     - "APP Public IP address: {{ app_instances.instances[0].public_ip_address }}"
+  when: rds_database == true
+  tags: info
+
+# Set facts
+- name: EC2 instance (DB)
+  amazon.aws.ec2_instance_info:
+    filters:
+      instance-state-name: running
+      "tag:Name": "{{ AWS_PREFIX }}_DB"
+  register: db_instances
+  when: rds_database == false
+
+- name: set fact when using EC2 as DB
+  set_fact:
+    application_address: "{{ app_instances.instances[0].public_dns_name }}"
+    database_address: "{{ db_instances.instances[0].private_ip_address }}"
+  when: rds_database == false
+
+- name: set fact when using RDS
+  set_fact:
+    application_address: "{{ app_instances.instances[0].public_dns_name }}"
+    database_address: "{{ aws_rds_info.instances[0].endpoint.address }}"
+  when: rds_database == true

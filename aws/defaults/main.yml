@@ -1,0 +1,12 @@
+---
+# defaults file for aws
+vpc_cidr: 10.100.0.0/16
+subnet_a_cidr: 10.100.10.0/24
+subnet_b_cidr: 10.100.20.0/24
+
+AWS_PREFIX: demo
+rds_database: false
+db_name: backend
+db_username: example
+db_password: verysecure
+

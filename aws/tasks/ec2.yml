@@ -1,0 +1,33 @@
+---
+- name: EC2 instance for app
+  amazon.aws.ec2_instance:
+    name: "{{ AWS_PREFIX }}_APP"
+    vpc_subnet_id: "{{ aws_subnet_info.subnet.id }}"
+    instance_type: t2.micro
+    security_group: "{{ aws_groups_app.group_id }}"
+    key_name: ACIT4640_KEY
+    image_id: ami-08675cddb6910220a
+    state: running
+    tags:
+      Course: "{{ AWS_PREFIX }}"
+      Role: "APP"
+    network:
+      assign_public_ip: true
+  register: ec2_instance_data
+
+- name: EC2 instance for DB
+  amazon.aws.ec2_instance:
+    name: "{{ AWS_PREFIX }}_DB"
+    vpc_subnet_id: "{{ aws_subnet_info.subnet.id }}"
+    instance_type: t2.micro
+    security_group: "{{ aws_groups_db.group_id }}"
+    key_name: ACIT4640_KEY
+    image_id: ami-08675cddb6910220a
+    state: running
+    tags:
+      Course: "{{ AWS_PREFIX }}"
+      Role: "DB"
+    network:
+      assign_public_ip: true
+  register: ec2_instance_db
+  when: rds_database == false

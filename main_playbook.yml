@@ -1,0 +1,54 @@
+---
+- hosts: localhost
+  gather_facts: no
+  vars:
+    AWS_PREFIX: demo
+    rds_database: false
+    db_name: demodb
+    db_username: user
+    db_password: supersecure123
+  tasks:
+    - include_role:
+        name: aws
+      tags: provision
+    - import_role:
+        name: aws
+        tasks_from: destroy.yml
+      tags: destroy
+    - name: Refresh refresh_inventory
+      meta: refresh_inventory
+      tags: [provision, destroy]
+
+- hosts: service_DB
+  vars:
+    db_name: demodb
+    db_username: user
+    db_password: supersecure123
+  tasks:
+    - import_role:
+        name: database
+      tags: provision
+
+- hosts: service_APP
+  vars:
+    db_host: "{{ hostvars.localhost.database_address }}"
+    db_name: demodb
+    db_username: user
+    db_password: supersecure123
+    student_name: demo
+    student_id: A00000001
+  tasks:
+    - import_role:
+        name: application
+      tags: provision
+
+- hosts: localhost
+  gather_facts: no
+  vars:
+    AWS_PREFIX: demo
+    rds_database: false
+  tasks:
+    - include_role:
+        name: aws
+        tasks_from: info.yml
+      tags: [ always, info ]

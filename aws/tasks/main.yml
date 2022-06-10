@@ -1,0 +1,18 @@
+---
+# tasks file for aws
+- name: Create infra
+  import_tasks: vpc.yml
+  tags: provision
+
+- name: Create EC2 infra
+  import_tasks: ec2.yml
+  tags: provision
+
+- name: Create RDS infra
+  import_tasks: rds.yml
+  when: rds_database == true
+  tags: provision
+
+- name: Get info
+  import_tasks: info.yml
+  tags: [provision, info]
